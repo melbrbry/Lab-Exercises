@@ -1,0 +1,65 @@
+from PIL import Image
+import numpy as np
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+from sklearn.cross_validation import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn import preprocessing
+
+objects = ["4", "6", "28", "51"]
+samplesNo = 356
+
+x = []
+y = []
+
+###data preparation
+
+for i in range(len(objects)):
+    for j in range(0, samplesNo, 5):
+        path = "obj" + objects[i] + "__" + str(j) + ".png"
+        img_3d = np.asarray(Image.open(path))
+        f = img_3d.ravel()
+        f = f.tolist()
+        x.append(f)
+        y.append(objects[i])
+
+
+###Data standardization
+
+x = preprocessing.scale(x)
+
+
+###PCA - features no. 1, 2
+
+x_reduce1 = PCA(2).fit_transform(x)
+plt.scatter(x_reduce1[:, 0], x_reduce1[:, 1], c=y)
+plt.show()
+
+
+###PCA - features no. 3, 4
+
+x_reduce2 = PCA(4).fit_transform(x)
+x_reduce2 = x_reduce2[:, 2:4]
+plt.scatter(x_reduce2[:, 0], x_reduce2[:, 1], c=y)
+plt.show()
+
+
+###PCA - features no. 10, 11
+
+x_reduce3 = PCA(11).fit_transform(x)
+x_reduce3 = x_reduce3[:, 9:11]
+plt.scatter(x_reduce3[:, 0], x_reduce3[:, 1], c=y)
+plt.show()
+
+
+###Naive Bayes
+
+xr_train, xr_test, y_train, y_test = train_test_split(x_reduce1, y)
+nb = GaussianNB()
+nb.fit(xr_train, y_train)
+pr_y = nb.predict(xr_test)
+acc = nb.score(xr_test, y_test)
+
+print("Classification Accuracy (1st, 2nd): ", str(acc*100), "%")
+
+
