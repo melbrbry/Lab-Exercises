@@ -1,0 +1,20 @@
+import numpy
+from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
+
+x_train = numpy.load("regression_Xtrain.npy")
+y_train = numpy.load("regression_ytrain.npy")
+x_test = numpy.load("regression_Xtest.npy")
+y_test = numpy.load("regression_ytest.npy")
+
+lr = LinearRegression()
+
+lr.fit(x_train.reshape(-1, 1), y_train)
+
+predicted = lr.predict(x_test.reshape(-1, 1))
+
+plt.plot(x_test, predicted, label="Model")
+
+plt.scatter(x_test, y_test, c='r')
+
+plt.show()
