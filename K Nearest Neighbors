@@ -1,0 +1,85 @@
+from pandas.core.nanops import disallow
+from sklearn import neighbors, datasets
+from sklearn import preprocessing
+from sklearn.decomposition import PCA
+from sklearn.cross_validation import train_test_split
+import numpy as np
+import matplotlib.pyplot as plt
+import math
+from matplotlib.colors import ListedColormap
+
+alpha = 0
+
+
+def gaussian_func(distances):
+    weights = []
+
+    for i in range(len(distances)):
+        tmp = []
+        for j in range(len(distances[0])):
+            tmp.append(math.exp(-1*alpha*distances[i][j]**2))
+        weights.append(tmp)
+
+    return weights
+
+
+def plot_boundaries(x_reduce, n_neighbors, weights, clf):
+
+    # Create color maps
+    cmap_light = ListedColormap(['#FFAAAA', '#AAFFAA', '#AAAAFF'])
+    cmap_bold = ListedColormap(['#FF0000', '#00FF00', '#0000FF'])
+
+
+    h = 0.02
+    x_min, x_max = x_reduce[:, 0].min() - 1, x_reduce[:, 0].max() + 1
+    y_min, y_max = x_reduce[:, 1].min() - 1, x_reduce[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+    Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+
+    # Put the result into a color plot
+    Z = Z.reshape(xx.shape)
+    plt.figure()
+    plt.pcolormesh(xx, yy, Z, cmap=cmap_light)
+
+    # Plot also the training points
+    plt.scatter(x_reduce[:, 0], x_reduce[:, 1], c=y, cmap=cmap_bold)
+    plt.xlim(xx.min(), xx.max())
+    plt.ylim(yy.min(), yy.max())
+    plt.title("KNN (k = " + str(n_neighbors) + ", weights = " + weights + ", accuracy = %0.2f" % (clf.score(x_test, y_test)*100) + "%)")
+    plt.show()
+
+
+# Load iris
+iris = datasets.load_iris()
+x = iris.data
+y = iris.target
+
+# Data standardization
+x = preprocessing.scale(x)
+
+# PCA
+x_reduce = PCA(2).fit_transform(x)
+
+# Cross validation
+x_train, x_test, y_train, y_test = train_test_split(x_reduce, y, test_size=0.4, random_state=1)
+
+
+# KNN
+max_n_neighbors = 10
+for n_neighbors in range(1, max_n_neighbors+1):
+    clf = neighbors.KNeighborsClassifier(n_neighbors)
+    clf.fit(x_train, y_train)
+    plot_boundaries(x_reduce, n_neighbors, 'uniform', clf)
+
+
+for weights in ['uniform', 'distance']:
+    clf = neighbors.KNeighborsClassifier(3, weights=weights)
+    clf.fit(x_train, y_train)
+    plot_boundaries(x_reduce, 3, weights, clf)
+
+
+for alpha in [0.1, 10, 100, 1000]:
+    clf = neighbors.KNeighborsClassifier(3, weights=gaussian_func)
+    clf.fit(x_train, y_train)
+    plot_boundaries(x_reduce, 3, "gaussian function (alpha = " + str(alpha) + ")", clf)
