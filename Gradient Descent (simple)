@@ -1,0 +1,26 @@
+## Gradient-descent for a simple quadratic function
+
+import numpy as np
+
+precision = 0.00001
+old_x = 0.0
+new_x = np.random.randint(-10 , 10)
+alpha = 0.01
+
+def f_derivative(x):
+    return 2*x - 6
+
+def convergence():
+    if abs(new_x-old_x) < precision:
+        return True
+    return False
+
+print("Starting from x = ", new_x)
+
+while not convergence():
+    gradient = f_derivative(new_x)
+    old_x = new_x
+    new_x = old_x - alpha*gradient
+
+print("Local minimum reached: ", new_x)
+print("Actual local minimum x = 3")
