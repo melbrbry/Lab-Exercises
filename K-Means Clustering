@@ -11,7 +11,7 @@ def plot_boundaries(x, k , kmeans, centers):
     # Create color maps
     cmap_light = ListedColormap(['#FFAAAA', '#AAFFAA', '#AAAAFF', '#FFFF00', '#800000', '#FF33F0', '#B650AF'
                                  , '#3337FF', '#F99F00', '#00F9F5'])
-    cmap_bold = ListedColormap(['#FF0000', '#00FF00', '#0000FF'])
+    cmap_bold = ListedColormap(['#FF0000', '#00FF00', '#0000FF', '#F0000F', '#FFFF0F'])
 
     h = 0.02
     x_min, x_max = x[:, 0].min() - 1, x[:, 0].max() + 1
@@ -37,8 +37,8 @@ digits = datasets.load_digits()
 x = digits.data
 y = digits.target
 
-x = x[y<3]
-y = y[y<3]
+x = x[y<5]
+y = y[y<5]
 
 x = preprocessing.scale(x)
 
