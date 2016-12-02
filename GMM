@@ -1,0 +1,47 @@
+from sklearn import datasets
+from sklearn import preprocessing
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+import numpy as np
+from sklearn.mixture import GMM
+from sklearn.metrics import normalized_mutual_info_score, homogeneity_score
+
+classesNo = 5
+
+def calcPurity(clustersNo, x, y, gmm):
+    count = {}
+    z = gmm.predict(x)
+    for i in range(len(x)):
+        if (z[i], y[i]) in count:
+             count[(z[i], y[i])] += 1
+        else:
+            count[(z[i], y[i])] = 1
+    sum = 0.0
+    for i in range(clustersNo):
+        mx = 0
+        for j in range(classesNo):
+            if (z[i], y[j]) in count:
+                mx = max(mx, count[(z[i], y[j])])
+        sum += mx
+    return sum / len(x)
+
+digits = datasets.load_digits()
+x = digits.data
+y = digits.target
+
+x = x[y<classesNo]
+y = y[y<classesNo]
+
+x = preprocessing.scale(x)
+
+x = PCA(2).fit_transform(x)
+
+for i in range(2, 11):
+    gmm = GMM(i)
+    gmm.fit(x)
+    nmf = normalized_mutual_info_score(y, gmm.predict(x))
+    hom = homogeneity_score(y, gmm.predict(x))
+    purity = calcPurity(i, x, y, gmm)
+    print("nmf ", nmf, " ,hom", hom, " purity", purity)
+
