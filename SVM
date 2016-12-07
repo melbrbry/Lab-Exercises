@@ -1,0 +1,132 @@
+from sklearn import datasets
+from sklearn.svm import SVC
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+from sklearn.utils import shuffle
+
+def plot_boundaries(x, y, c, svm):
+
+    # Create color maps
+    cmap_light = ListedColormap(['#FFAAAA', '#AAFFAA', '#AAAAFF'])
+    cmap_bold = ListedColormap(['#FF0000', '#00FF00', '#0000FF'])
+
+    h = 0.02
+    x_min, x_max = x[:, 0].min() - 1, x[:, 0].max() + 1
+    y_min, y_max = x[:, 1].min() - 1, x[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+    Z = svm.predict(np.c_[xx.ravel(), yy.ravel()])
+
+    # Put the result into a color plot
+    Z = Z.reshape(xx.shape)
+    plt.figure()
+    plt.pcolormesh(xx, yy, Z, cmap=cmap_light)
+
+    # Plot also the training points
+    plt.scatter(x[:, 0], x[:, 1], c=y, cmap=cmap_bold)
+    plt.xlim(xx.min(), xx.max())
+    plt.ylim(yy.min(), yy.max())
+    plt.title("RBF SVM ( C =  1, Gamma = 0.1)")
+    plt.show()
+
+iris = datasets.load_iris()
+x = iris.data[:,:2]
+y = iris.target
+
+x, y = shuffle(x, y, random_state=1)
+
+x_train, x_valid, x_test = np.split(x, [int(0.5*len(x)), int(0.7*len(x))])
+y_train, y_valid, y_test = np.split(y, [int(0.5*len(y)), int(0.7*len(y))])
+
+
+for c in [0.001, 0.01, 0.1, 1, 10, 100, 1000]:
+    linearSVM = SVC(c, kernel='linear')
+    linearSVM.fit(x_train, y_train)
+    #plot_boundaries(x_train, y_train, c, linearSVM)
+    #print(linearSVM.score(x_valid, y_valid))
+    if c==0.1:
+        plot_boundaries(x_test, y_test, c, linearSVM)
+        print("best linear:", linearSVM.score(x_test, y_test))
+
+
+
+for c in [0.001, 0.01, 0.1, 1, 10, 100, 1000]:
+    RBF = SVC(c, kernel='rbf')
+    RBF.fit(x_train, y_train)
+    #plot_boundaries(x_train, y_train, c, RBF)
+    print(RBF.score(x_valid, y_valid))
+    if c==0.1:
+        #plot_boundaries(x_test, y_test, 0.01, RBF)
+        print("best:", RBF.score(x_test, y_test))
+
+
+
+for c in [1e-1, 1, 1e1, 1e2]:
+    for g in [1e-1, 1, 1e1, 1e2]:
+        #print("Gamma:", c,', C: ' ,g)
+        RBF = SVC(c, gamma=g, kernel='rbf')
+        RBF.fit(x_train, y_train)
+        #plot_boundaries(x_train, y_train, c, RBF)
+        #print(RBF.score(x_valid, y_valid))
+        if c==1 and g==0.1:
+            #plot_boundaries(x_test, y_test, 1, RBF)
+            print("Regular best:", RBF.score(x_test, y_test))
+
+
+
+x_new = []
+x_new.extend(x_train)
+x_new.extend(x_valid)
+
+y_new = []
+y_new.extend(y_train)
+y_new.extend(y_valid)
+
+y_new = np.concatenate(np.array(y_train), np.array(y_valid))
+
+print("OK")
+
+print(len(x_new))
+
+foldsNo = 5
+xx = np.array(x_new)
+yy = np.array(y_new)
+xFoldsnp = np.split(xx, foldsNo)
+yFoldsnp = np.split(yy, foldsNo)
+xFolds = list(xFoldsnp)
+yFolds = list(yFoldsnp)
+
+svm = SVC(1, gamma=1, kernel='rbf')
+svm.fit(x_new, y_new)
+print("best:", svm.score(x_test, y_test))
+
+best = -1
+for c in [1e-1, 1, 1e1, 1e2]:
+    for g in [1e-1, 1, 1e1, 1e2]:
+        avgScore = 0
+        print("Gamma:", g, ", C: ", c)
+        for i in range(foldsNo):
+            train_data = []
+            train_labels = []
+            validation_data = []
+            validation_labels = []
+            for j in range(foldsNo):
+                if i==j :
+                    validation_data.extend(xFolds[j])
+                    validation_labels.extend(yFolds[j])
+                else:
+                    train_data.extend(xFolds[j])
+                    train_labels.extend(yFolds[j])
+            svm = SVC(gamma=g, C=c, kernel='rbf')
+            svm.fit(train_data, train_labels)
+            avgScore += svm.score(validation_data, validation_labels)
+        avgScore /= foldsNo
+        print(avgScore)
+        if avgScore > best:
+            best = max(avgScore, best)
+                print("performance on test data:", svm.score(x_test, y_test))
+
+svm = SVC(gamma=0.1, C=1, kernel='rbf')
+svm.fit(x_new, y_new)
+print("performance on test data:", svm.score(x_test, y_test))
